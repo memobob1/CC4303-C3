@@ -43,13 +43,15 @@ class Router:
 
             if (self.ip, self.port) == destination_address:
                 print(f"Ha recibido el mensaje: {parsed_ip_packet.message}")
+                continue
 
-            next_address = check_routes("a", destination_address)
+            next_address = check_routes(self.routes_file, destination_address)
             truncated_message: str = f"'{parsed_ip_packet.message[:20]}...'"
 
             if next_address:
                 print(f"Redirigiendo paquete {truncated_message} con destino final {destination_address}"
                       + f" desde {(self.ip, self.port)} hacia {next_address}")
+                self.socket.sendto(packet, next_address)
             else:
                 print(f"No hay rutas hacia {destination_address} para paquete {truncated_message}")
 
@@ -95,5 +97,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    #main()
-    print(check_routes("rutas_R2_V2.txt", ("127.0.0.1", 8881)))
+    main()
