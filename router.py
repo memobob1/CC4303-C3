@@ -40,6 +40,32 @@ class Router:
             print(packet)
 
 
+def check_routes(routes_file_name: str, destination_address: tuple[str, int]):
+
+    final_ip: str = destination_address[0]
+    final_port: int = destination_address[1]
+
+    with open(routes_file_name, "r") as file:
+        for line in file:
+            split_line: list[str] = line.split(" ")
+
+            ip_line: list[str] = split_line[0].split("/")
+            route_ip: str = ip_line[0]
+            bits_to_compare: int = int(ip_line[1])
+
+            route_initial_port: int = int(split_line[1])
+            route_last_port: int = int(split_line[2])
+
+            if (
+                route_ip[:bits_to_compare] == final_ip[:bits_to_compare]
+                and final_port in range(route_initial_port, route_last_port + 1)
+            ):
+                next_hop_ip: str = split_line[3]
+                next_hop_port: int = int(split_line[4])
+                return next_hop_ip, next_hop_port
+
+    return None
+
 def main() -> None:
     """
     Lee router_IP, router_puerto y router_rutas.txt desde sys.argv y echa a correr el router.
@@ -55,4 +81,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    print(check_routes("rutas_R2_V2.txt", ("127.0.0.1", 8881)))
