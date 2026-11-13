@@ -1,6 +1,7 @@
 IP_SIZE: int = 4
 PORT_SIZE: int = 2
-HEADER_SIZE: int = IP_SIZE + PORT_SIZE
+TTL_SIZE: int = 1
+HEADER_SIZE: int = IP_SIZE + PORT_SIZE + TTL_SIZE
 
 
 class IPPacket:
@@ -10,20 +11,23 @@ class IPPacket:
     Atributos:
         ip (str): IP de destino final, en formato a.b.c.d.
         port (int): Puerto de destino final.
+        ttl (int): El tiempo de vida (time to live) del paquete.
         message (str): Contenido del paquete, sin headers.
     """
 
-    def __init__(self, ip: str, port: int, message: str) -> None:
+    def __init__(self, ip: str, port: int, ttl: int, message: str) -> None:
         """
         Crea un paquete con su destino final y su mensaje.
 
         Parámetros:
             ip (str): IP de destino final, en formato a.b.c.d.
             port (int): Puerto de destino final.
+            ttl (int): El tiempo de vida (time to live) del paquete.
             message (str): Contenido del paquete, sin headers.
         """
         self.ip: str = ip
         self.port: int = port
+        self.ttl: int = ttl
         self.message: str = message
 
     @classmethod
@@ -32,7 +36,7 @@ class IPPacket:
         Construye un paquete a partir de los bytes recibidos por el socket.
 
         Parámetros:
-            raw (bytes): IP (4 bytes) + puerto (2 bytes) + mensaje.
+            raw (bytes): IP (4 bytes) + puerto (2 bytes) + TTL (1 byte) + mensaje.
 
         Retorna:
             IPPacket: El paquete con sus campos separados.
@@ -43,9 +47,10 @@ class IPPacket:
         c: int = raw[2]
         d: int = raw[3]
         ip: str = f"{a}.{b}.{c}.{d}"
-        port: int = int.from_bytes(raw[IP_SIZE:HEADER_SIZE], "big")
+        port: int = int.from_bytes(raw[IP_SIZE:IP_SIZE + PORT_SIZE], "big")
+        ttl: int = int.from_bytes(raw[HEADER_SIZE - TTL_SIZE:HEADER_SIZE], "big")
         message: str = raw[HEADER_SIZE:].decode()
-        return cls(ip, port, message)
+        return cls(ip, port, ttl, message)
 
     def to_bytes(self) -> bytes:
         """
@@ -58,14 +63,15 @@ class IPPacket:
         ip: bytes = bytes([int(octets[0]), int(octets[1]), int(octets[2]), int(octets[3])])
         # big-endian: orden de bytes de red, el mismo que usa IP real
         port: bytes = self.port.to_bytes(PORT_SIZE, "big")
-        return ip + port + self.message.encode()
+        ttl: bytes = self.ttl.to_bytes(TTL_SIZE, "big")
+        return ip + port + ttl + self.message.encode()
 
     def __str__(self) -> str:
         """
         Retorna:
             str: El paquete en formato ip;puerto;mensaje, como en la guía.
         """
-        return f"{self.ip};{self.port};{self.message}"
+        return f"{self.ip};{self.port};{self.ttl};{self.message}"
 
 
 def parse_packet(IP_packet: bytes) -> IPPacket:
