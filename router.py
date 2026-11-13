@@ -102,17 +102,23 @@ class Router:
             packet, _ = self.socket.recvfrom(BUFFER_SIZE)
             parsed_ip_packet = parse_packet(packet)
             destination_address: tuple[str, int] = (parsed_ip_packet.ip, parsed_ip_packet.port)
+            truncated_message: str = f"'{parsed_ip_packet.message[:20]}...'"
 
-            if (self.ip, self.port) == destination_address:
+            if (parsed_ip_packet.ttl <= 0):
+                print(f"Se recibió paquete {truncated_message} con TTL 0")
+                continue
+
+            elif (self.ip, self.port) == destination_address:
                 print(f"Ha recibido el mensaje: {parsed_ip_packet.message}")
                 continue
 
             next_address = self.check_routes(destination_address)
-            truncated_message: str = f"'{parsed_ip_packet.message[:20]}...'"
 
             if next_address:
                 print(f"Redirigiendo paquete {truncated_message} con destino final {destination_address}"
                       + f" desde {(self.ip, self.port)} hacia {next_address}")
+                parsed_ip_packet.ttl -= 1
+                packet = create_packet(parsed_ip_packet)
                 self.socket.sendto(packet, next_address)
             else:
                 print(f"No hay rutas hacia {destination_address} para paquete {truncated_message}")
