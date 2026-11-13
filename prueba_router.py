@@ -7,7 +7,7 @@ def main() -> None:
     Lee el destino final y la dirección de envío desde sys.argv y envía cada línea del archivo
     'texto_de_prueba.txt' usando paquetes IP.
     """
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 4:
         sys.exit('Uso: python3 prueba_router.py "IP_final;puerto_final;tiempo_de_vida" IP_envio puerto_envio')
 
     ip, port, ttl = parse_header(sys.argv[1])
