@@ -133,3 +133,17 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+# python3 router.py 127.0.0.1 8881 rutas_R1_v3.txt
+# python3 router.py 127.0.0.1 8882 rutas_R2_v3.txt
+# python3 router.py 127.0.0.1 8883 rutas_R3_v3.txt
+# python3 router.py 127.0.0.1 8884 rutas_R4_v3.txt
+# python3 router.py 127.0.0.1 8885 rutas_R5_v3.txt
+
+# python3 router.py 127.0.0.1 8880 rutas_R0_v3_t2.txt
+# python3 router.py 127.0.0.1 8881 rutas_R1_v3_t2.txt
+# python3 router.py 127.0.0.1 8882 rutas_R2_v3_t2.txt
+# python3 router.py 127.0.0.1 8883 rutas_R3_v3_t2.txt
+# python3 router.py 127.0.0.1 8884 rutas_R4_v3_t2.txt
+# python3 router.py 127.0.0.1 8885 rutas_R5_v3_t2.txt
+# python3 router.py 127.0.0.1 8886 rutas_R6_v3_t2.txt
