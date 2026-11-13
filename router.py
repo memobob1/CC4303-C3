@@ -102,7 +102,11 @@ class Router:
             packet, _ = self.socket.recvfrom(BUFFER_SIZE)
             parsed_ip_packet = parse_packet(packet)
             destination_address: tuple[str, int] = (parsed_ip_packet.ip, parsed_ip_packet.port)
-            truncated_message: str = f"'{parsed_ip_packet.message[:20]}...'"
+
+            if len(parsed_ip_packet.message) > 25:
+                truncated_message: str = f"'{parsed_ip_packet.message[:22]}...'"
+            else:
+                truncated_message: str = parsed_ip_packet.message
 
             if (parsed_ip_packet.ttl <= 0):
                 print(f"Se recibió paquete {truncated_message} con TTL 0")
