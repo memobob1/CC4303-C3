@@ -1,6 +1,7 @@
 import socket
 import sys
 from packet import IPPacket, parse_packet, create_packet
+from fragmentation import fragment_IP_packet
 
 BUFFER_SIZE: int = 4096
 
@@ -212,11 +213,17 @@ class Router:
             if route:
                 next_address: tuple[str, int] = route[0]
                 mtu: int = route[1]
-                print(f"Redirigiendo paquete {truncated_message} con destino final {destination_address}"
-                      + f" desde {(self.ip, self.port)} hacia {next_address}")
                 parsed_ip_packet.ttl -= 1
                 packet = create_packet(parsed_ip_packet)
-                self.socket.sendto(packet, next_address)
+
+                # fragmentamos el paquete si es necesario y lo enviamos al siguiente salto
+                fragments: list[bytes] = fragment_IP_packet(packet, mtu)
+                print(f"Redirigiendo paquete {truncated_message} con destino final {destination_address}"
+                      + f" desde {(self.ip, self.port)} hacia {next_address} en {len(fragments)} fragmento(s)")
+                for fragment in fragments:
+                    # enviamos cada fragmento al siguiente salto
+                    self.socket.sendto(fragment, next_address)
+            
             # si no, imprimimos que no hay rutas hacia el destino
             else:
                 print(f"No hay rutas hacia {destination_address} para paquete {truncated_message}")
