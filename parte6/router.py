@@ -1,7 +1,7 @@
 import socket
 import sys
 from packet import IPPacket, parse_packet, create_packet
-from fragmentation import fragment_IP_packet
+from fragmentation import fragment_IP_packet, reassemble_IP_packet
 
 BUFFER_SIZE: int = 4096
 
@@ -104,7 +104,9 @@ class Router:
     Atributos:
         ip (str): IP en la que escucha el router.
         port (int): Puerto en el que escucha el router.
-        routes_file (str): Nombre del archivo con la tabla de rutas.
+        routes_file_name (str): Nombre del archivo con la tabla de rutas.
+        destination_areas (list[RoutesToArea]): Áreas de destino leídas de la tabla, en orden.
+        fragments (dict[int, list[bytes]]): Fragmentos recibidos para este router, agrupados por ID.
         socket (socket.socket): Socket UDP asociado a (ip, port).
     """
 
@@ -122,6 +124,7 @@ class Router:
         self.routes_file_name: str = routes_file_name
         self.destination_areas: list[RoutesToArea] = []
         self.read_routes_file()
+        self.fragments: dict[int, list[bytes]] = {} # diccionario que guarda los fragmentos recibidos para este router, agrupados por ID
         self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((ip, port))
 
@@ -182,6 +185,29 @@ class Router:
 
         return None
 
+    def store_and_reassemble(self, packet: bytes, packet_id: int) -> None:
+        """
+        Guarda un fragmento (o paquete) dirigido a este router e intenta rearmar su paquete original.
+        Si queda completo, imprime el mensaje.
+
+        Parámetros:
+            packet (bytes): Fragmento o paquete recibido.
+            packet_id (int): ID del paquete al que pertenece.
+        """
+
+        # Si el ID no existe en el diccionario, lo agregamos con lista vacía
+        if packet_id not in self.fragments:
+            self.fragments[packet_id] = []
+        self.fragments[packet_id].append(packet) # agregamos el fragmento en su diccionario correspondiente al ID
+
+        full_packet: bytes | None = reassemble_IP_packet(self.fragments[packet_id]) # usamos reassemble_IP_packet para intentar rearmar el paquete original
+        if full_packet is not None:
+            # Aca borramos el ID para poder recibir otro paquete con el mismo ID más adelante
+            del self.fragments[packet_id]
+            print(f"Ha recibido el mensaje: {parse_packet(full_packet).message.decode()}")
+
+        # si no se pudo rearmar el paquete, no hacemos nada y esperamos a que lleguen más fragmentos
+
     def run(self) -> None:
         """
         Escucha de forma bloqueante en un loop infinito e imprime cada paquete recibido.
@@ -204,7 +230,7 @@ class Router:
                 continue
 
             elif (self.ip, self.port) == destination_address:
-                print(f"Ha recibido el mensaje: {message}")
+                self.store_and_reassemble(packet, parsed_ip_packet.id) # si el paquete es para este router, lo guardamos y tratamos de rearmarlo
                 continue
 
             route: tuple[tuple[str, int], int] | None = self.check_routes(destination_address)
