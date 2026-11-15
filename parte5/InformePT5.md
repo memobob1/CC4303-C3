@@ -57,7 +57,7 @@ También tiene la capacidad de identificar si la dirección final de un paquete 
   ```
   Esa línea de código permite implementar Round Robin y alternar entre las distintas rutas.
 
-## Script para enviar mensajes
+## Script para enviar un mensaje
 
 Cuando los routers ya están encendidos en otras consolas, nuestro script "enviar.py" permite enviar un mensaje desde un router
 determinado hacia otro router. El comando para usarlo (en una terminal aparte) es de la siguiente forma:
@@ -84,3 +84,32 @@ Por ejemplo, la tabla de rutas de R2 luce de la siguiente forma:
 127.0.0.1/0 0 65535 127.0.0.1 7000
 ```
 Notar que la ruta default acepta todas las IPs (la máscara es 0), y todos los puertos posibles (desde el puerto 0 hasta el puerto 65535).
+
+## Pruebas Mini-Internet sin TTL
+
+1) El fallo provoca que R2 retransmita un mensaje hacia R1 cuando en realidad quiere enviarlo a R3. Por lo tanto, al intentar enviar un
+   paquete desde R1 hacia R3, se genera un bucle infinito donde R1 envía un mensaje a R2, R2 lo devuelve a R1, y R1 lo vuelve a enviar a R2.
+
+2) Usando la configuración de 5 routers, el primer mensaje desde R1 hacia R5 realiza 7 saltos de la siguiente forma:
+   ```
+   R1 -> R2 -> R3 -> R2 -> R4 -> R2 -> R3 -> R5
+   ```
+   Luego, el segundo mensaje desde R1 hacia R5 realiza 3 saltos de la siguiente manera:
+   ```
+   R1 -> R2 -> R4 -> R5
+   ```
+   El tercer mensaje imita el mismo orden que el primer mensaje (7 saltos). Mientras que el cuarto mensaje imita el orden del segundo mensaje (3 saltos).
+   Y así sucesivamente. Por lo tanto, la cantidad de saltos que dan los paquetes desde R1 a R5 son: 7, 3, 7, 3, 7, 3, 7, 3, ...
+
+   Podemos notar una gran diferencia entre la cantidad de saltos de cada envío, pues 7 es mayor al doble de 3. El principal retraso es causado cuando
+   los paquetes recibidos por R3 y R4 son reenviados a R2 en lugar de ser retransmitidos a R5.
+
+## Pruebas Mini-Internet con TTL
+
+1) La principal diferencia es que el mensaje deja de estar en un bucle infinito entre R1 y R2. Ahora el mensaje eventualmente llega a R1 con un TTL igual a 0,
+   y es desechado por R1, finalizando su viaje.
+
+2) El orden se pierde completamente. Una buena parte de los mensajes se pierden durante el viaje cuando su TTL llega a 0, y el resto de mensajes que logra llegar    a R5, ingresan en completo desorden.
+
+   Esto se puede ver en la siguiente imagen, donde R5 es la terminal de la izquierda que se ubica en el centro de la pantalla. Los números en paréntesis indican
+   el número de línea de cada mensaje dentro del archivo "texto_de_prueba.txt".
