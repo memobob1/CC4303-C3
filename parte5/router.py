@@ -5,7 +5,28 @@ from packet import IPPacket, parse_packet, create_packet
 BUFFER_SIZE: int = 4096
 
 class RoutesToArea:
-    def __init__(self, ip: str, bits_to_compare: int, first_port: int, last_port: int):
+    """
+    Grupo de rutas de la tabla que llevan a una misma área de destino (red + rango de puertos).
+
+    Atributos:
+        ip (str): IP de la red de destino.
+        bits_to_compare (int): Largo del prefijo CIDR (cuántos bits de la IP definen la red).
+        first_port (int): Primer puerto del rango de destino.
+        last_port (int): Último puerto del rango de destino.
+        possible_routes (list[tuple[str, int]]): La lista de rutas que existen para viajar la red de destino.
+        next_hop_idx (int): Índice de la próxima ruta a usar (round-robin).
+    """
+
+    def __init__(self, ip: str, bits_to_compare: int, first_port: int, last_port: int) -> None:
+        """
+        Crea el área sin rutas.
+
+        Parámetros:
+            ip (str): IP de la red de destino.
+            bits_to_compare (int): Largo del prefijo CIDR.
+            first_port (int): Primer puerto del rango de destino.
+            last_port (int): Último puerto del rango de destino.
+        """
         self.ip: str = ip
         self.bits_to_compare: int = bits_to_compare
         self.first_port: int = first_port
@@ -14,15 +35,36 @@ class RoutesToArea:
         self.next_hop_idx = 0
 
     def add_route(self, route: tuple[str, int]) -> None:
+        """
+        Agrega una ruta posible hacia el área.
+
+        Parámetros:
+            next_hop (tuple[str, int]): Dirección (IP, puerto) del siguiente salto.
+        """
         self.possible_routes.append(route)
 
     def contains_address(self, address: tuple[str, int]) -> bool:
+        """
+        Indica si una dirección pertenece al área.
+
+        Parámetros:
+            address (tuple[str, int]): Dirección (IP, puerto) de destino.
+
+        Retorna:
+            bool: True si la IP está en la red y el puerto en el rango.
+        """
         ip: str = address[0]
         port: int = address[1]
         return (ip[:self.bits_to_compare] == self.ip[:self.bits_to_compare]
                 and port in range(self.first_port, self.last_port + 1))
 
     def get_next_hop(self) -> tuple[str, int]:
+        """
+        Entrega la siguiente ruta según round-robin.
+
+        Retorna:
+            tuple[str, int]: El siguiente salto.
+        """
         next_hop: tuple[str, int] = self.possible_routes[self.next_hop_idx]
         self.next_hop_idx = (self.next_hop_idx + 1) % len(self.possible_routes)
         return next_hop
@@ -34,7 +76,7 @@ class Router:
     Atributos:
         ip (str): IP en la que escucha el router.
         port (int): Puerto en el que escucha el router.
-        routes_file (str): Nombre del archivo con la tabla de rutas.
+        routes_file_name (str): Nombre del archivo con la tabla de rutas.
         socket (socket.socket): Socket UDP asociado a (ip, port).
     """
 
@@ -55,8 +97,10 @@ class Router:
         self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((ip, port))
 
-    def read_routes_file(self):
-
+    def read_routes_file(self) -> None:
+        """
+        Lee la tabla de rutas y agrupa sus líneas por área de destino.
+        """
         routes_by_destination_area: dict[tuple[str, int, int, int], list[tuple[str, int]]] = {}
 
         with open(self.routes_file_name, "r") as file:
@@ -82,11 +126,20 @@ class Router:
             destination_area: RoutesToArea = RoutesToArea(ip, bits_to_compare, initial_port, last_port)
 
             for (hop_ip, hop_port) in routes_by_destination_area[(ip, bits_to_compare, initial_port, last_port)]:
-                destination_area.add_route((hop_ip, hop_port))
+                destination_area.add_route((hop_ip, hop_port)) # agregamos el siguiente salto a la lista de rutas posibles del área de destino
 
             self.destination_areas.append(destination_area)
                 
-    def check_routes(self, destination_address: tuple[str, int]):
+    def check_routes(self, destination_address: tuple[str, int]) -> tuple[str, int] | None:
+        """
+        Busca en la tabla la primera área que contiene al destino y entrega su siguiente ruta.
+
+        Parámetros:
+            destination_address (tuple[str, int]): Dirección (IP, puerto) de destino final.
+
+        Retorna:
+            tuple[tuple[str, int], int] | None: El siguiente salto y el MTU de su enlace, o None si no hay ruta.
+        """
         for area in self.destination_areas:
             if area.contains_address(destination_address):
                 return area.get_next_hop()
@@ -103,6 +156,8 @@ class Router:
             parsed_ip_packet = parse_packet(packet)
             destination_address: tuple[str, int] = (parsed_ip_packet.ip, parsed_ip_packet.port)
 
+            # Esto es solo cosmético para que los mensajes no sean demasiado largos en la salida,
+            # cuando son redirigidos por los routers.
             if len(parsed_ip_packet.message) > 25:
                 truncated_message: str = f"'{parsed_ip_packet.message[:22]}...'"
             else:
@@ -112,18 +167,22 @@ class Router:
                 print(f"Se recibió paquete {truncated_message} con TTL 0")
                 continue
 
+            # Imprime el mensaje completo.
             elif (self.ip, self.port) == destination_address:
                 print(f"Ha recibido el mensaje: {parsed_ip_packet.message}")
                 continue
 
             next_address = self.check_routes(destination_address)
 
+            # Si encontramos una ruta hacia el destino, enviamos el paquete al siguiente salto y decrementamos el TTL
             if next_address:
                 print(f"Redirigiendo paquete {truncated_message} con destino final {destination_address}"
                       + f" desde {(self.ip, self.port)} hacia {next_address}")
                 parsed_ip_packet.ttl -= 1
                 packet = create_packet(parsed_ip_packet)
                 self.socket.sendto(packet, next_address)
+
+            # Si no, imprimimos que no hay rutas hacia el destino
             else:
                 print(f"No hay rutas hacia {destination_address} para paquete {truncated_message}")
 
