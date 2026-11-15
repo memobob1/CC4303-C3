@@ -44,3 +44,49 @@ def fragment_IP_packet(IP_packet: bytes, MTU: int) -> list[bytes]:
         start = end
 
     return fragments
+
+
+def get_offset(packet: IPPacket) -> int:
+    """
+    Función auxiliar tipo getter para obtener el offset de un paquete; se usa para ordenar fragmentos.
+
+    Parámetros:
+        packet (IPPacket): Fragmento parseado.
+
+    Retorna:
+        int: Su offset.
+    """
+    return packet.offset
+
+
+def reassemble_IP_packet(fragment_list: list[bytes]) -> bytes | None:
+    """
+    Rearma un paquete a partir de sus fragmentos, que pueden venir desordenados.
+
+    Parámetros:
+        fragment_list (list[bytes]): Fragmentos de un mismo ID.
+
+    Retorna:
+        bytes | None: El paquete completo, o None si todavía faltan fragmentos.
+    """
+    packets: list[IPPacket] = []
+    for fragment in fragment_list:
+        packets.append(parse_packet(fragment))
+    
+    # Ordenamos los fragmentos por offset, para poder rearmarlos en orden
+    packets.sort(key=get_offset)
+
+    message: bytes = b"" # mensaje final rearmado
+    for packet in packets:
+        # Si falta un fragmento al inicio o a la mitad, no podemos rearmar el paquete
+        if packet.offset != len(message):
+            return None
+
+        message += packet.message # vamos armando el mensaje final con los mensajes de cada fragmento
+
+    # Si el último fragmento tiene flag 1, significa que faltan fragmentos al final, por lo que no podemos rearmar el paquete
+    if packets[-1].flag != 0:
+        return None
+
+    first: IPPacket = packets[0]
+    return create_packet(IPPacket(first.ip, first.port, first.ttl, first.id, 0, 0, message))
