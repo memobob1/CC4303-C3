@@ -119,6 +119,80 @@ python3 prueba_router.py "127.0.0.1;8885;10" 127.0.0.1 8881
    Podemos notar una gran diferencia entre la cantidad de saltos de cada envío, pues 7 es mayor al doble de 3. El principal retraso es causado cuando
    los paquetes recibidos por R3 y R4 son reenviados a R2 en lugar de ser retransmitidos a R5.
 
+3) Usando la configuración de 7 routers, el primer mensaje desde R1 hacia R5 realiza 11 saltos de la siguiente forma:
+   ```
+   R1 -> R0 -> R1 -> R2 -> R3 -> R2 -> R4 -> R2 -> R6 -> R2 -> R3 -> R5
+   ```
+   Luego, el segundo mensaje desde R1 hacia R5 realiza 4 saltos de la siguiente manera:
+   ```
+   R1 -> R0 -> R2 -> R4 -> R5
+   ```
+   El tercer mensaje realiza 12 saltos de la siguiente forma:
+   ```
+   R1 -> R2 -> R6 -> R3 -> R6 -> R2 -> R3 -> R2 -> R4 -> R2 -> R6 -> R3 -> R5
+   ```
+   El cuarto mensaje ocupa 8 saltos, el quinto mensaje usa 7, el sexto mensaje utiliza 11, y el séptimo mensaje realiza 7. A primera vista, no pareciera
+   existir un patrón. Una observación importante es que el promedio de saltos para enviar cada mensaje aumenta bastante cuando hay más rutas, pues
+   el mensaje puede dar más vueltas entre los routers. Además, ninguno de los 7 mensajes ocupó la ruta más corta de tres saltos que
+   sería (R1 -> R2 -> R3/R4 -> R5).
+
+   Los archivos de rutas que se crearon para este item son:
+
+   ```
+   # archivo rutas_R0_v3_t2.txt
+   127.0.0.1/24 8881 8886 127.0.0.1 8881
+   127.0.0.1/24 8881 8886 127.0.0.1 8882
+   127.0.0.1/0 0 65535 127.0.0.1 7000
+   ```
+   ```
+   # archivo rutas_R1_v3_t2.txt
+   127.0.0.1/24 8880 8880 127.0.0.1 8880
+   127.0.0.1/24 8880 8880 127.0.0.1 8882
+   127.0.0.1/24 8882 8886 127.0.0.1 8880
+   127.0.0.1/24 8882 8886 127.0.0.1 8882
+   127.0.0.1/0 0 65535 127.0.0.1 7000
+   ```
+   ```
+   # archivo rutas_R2_v3_t2.txt
+   127.0.0.1/24 8880 8881 127.0.0.1 8880
+   127.0.0.1/24 8880 8881 127.0.0.1 8881
+   127.0.0.1/24 8883 8886 127.0.0.1 8883
+   127.0.0.1/24 8883 8886 127.0.0.1 8884
+   127.0.0.1/24 8883 8886 127.0.0.1 8886
+   127.0.0.1/0 0 65535 127.0.0.1 7000
+   ```
+   ```
+   # archivo rutas_R3_v3_t2.txt
+   127.0.0.1/24 8880 8882 127.0.0.1 8882
+   127.0.0.1/24 8880 8882 127.0.0.1 8885
+   127.0.0.1/24 8880 8882 127.0.0.1 8886
+   127.0.0.1/24 8884 8886 127.0.0.1 8882
+   127.0.0.1/24 8884 8886 127.0.0.1 8885
+   127.0.0.1/24 8884 8886 127.0.0.1 8886
+   127.0.0.1/0 0 65535 127.0.0.1 7000
+   ```
+   ```
+   # archivo rutas_R4_v3_t2.txt
+   127.0.0.1/24 8880 8883 127.0.0.1 8882
+   127.0.0.1/24 8880 8883 127.0.0.1 8885
+   127.0.0.1/24 8885 8886 127.0.0.1 8882
+   127.0.0.1/24 8885 8886 127.0.0.1 8885
+   127.0.0.1/0 0 65535 127.0.0.1 7000
+   ```
+   ```
+   # archivo rutas_R5_v3_t2.txt
+   127.0.0.1/24 8880 8884 127.0.0.1 8883
+   127.0.0.1/24 8880 8884 127.0.0.1 8884
+   127.0.0.1/24 8886 8886 127.0.0.1 8883
+   127.0.0.1/24 8886 8886 127.0.0.1 8884
+   127.0.0.1/0 0 65535 127.0.0.1 7000
+   ```
+   ```
+   # archivo rutas_R6_v3_t2.txt
+   127.0.0.1/24 8880 8885 127.0.0.1 8882
+   127.0.0.1/24 8880 8885 127.0.0.1 8883
+   127.0.0.1/0 0 65535 127.0.0.1 7000
+   ```
 ## Pruebas Mini-Internet con TTL
 
 1) La principal diferencia es que el mensaje deja de estar en un bucle infinito entre R1 y R2. Ahora el mensaje eventualmente llega a R1 con un TTL igual a 0,
