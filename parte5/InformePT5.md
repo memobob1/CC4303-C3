@@ -9,7 +9,7 @@ Auxiliar: Julián Ferreira
 
 Enlace de github: [https://github.com/memobob1/CC4303-C3/tree/main/parte5](https://github.com/memobob1/CC4303-C3/tree/main/parte5)
 
-Disclaimer Uso de IA:
+Disclaimer Uso de IA: Se utilizó Claude para documentar la mayor parte del archivo "router.py".
 
 ## Comparación entre la tabla de rutas de esta actividad y la real
 
@@ -57,18 +57,6 @@ También tiene la capacidad de identificar si la dirección final de un paquete 
   ```
   Esa línea de código permite implementar Round Robin y alternar entre las distintas rutas.
 
-## Script para enviar un mensaje
-
-Cuando los routers ya están encendidos en otras consolas, nuestro script "enviar.py" permite enviar un mensaje desde un router
-determinado hacia otro router. El comando para usarlo (en una terminal aparte) es de la siguiente forma:
-```
-python3 enviar.py "IP_final;puerto_final;tiempo_de_vida" "mensaje" IP_envio puerto_envio
-```
-Por ejemplo, para enviar el mensaje "The Apothecary Diaries" desde R1 hacia R4, con un TTL de 15, se ejecuta:
-```
-python3 enviar.py "127.0.0.1;8884;15" "The Apothecary Diaries" 127.0.0.1 8881
-```
-
 ## El router default
 
 En esta actividad nuestro router default se encuentra en la dirección (127.0.0.1, 7000). Queremos que los routers solamente envíen mensajes a esta dirección
@@ -84,6 +72,33 @@ Por ejemplo, la tabla de rutas de R2 luce de la siguiente forma:
 127.0.0.1/0 0 65535 127.0.0.1 7000
 ```
 Notar que la ruta default acepta todas las IPs (la máscara es 0), y todos los puertos posibles (desde el puerto 0 hasta el puerto 65535).
+
+## Script para enviar un mensaje
+
+Cuando los routers ya están encendidos en otras consolas, nuestro script "enviar.py" permite enviar un mensaje desde un router
+determinado hacia otro router. El comando para usarlo (en una terminal aparte) es de la siguiente forma:
+```
+python3 enviar.py "IP_final;puerto_final;tiempo_de_vida" "mensaje" IP_envio puerto_envio
+```
+Por ejemplo, para enviar el mensaje "The Apothecary Diaries" desde R1 hacia R4, con un TTL de 15, se ejecuta:
+```
+python3 enviar.py "127.0.0.1;8884;15" "The Apothecary Diaries" 127.0.0.1 8881
+```
+
+## Script para enviar un gran archivo de texto
+
+Cuando los routers ya están encendidos en otras consolas, nuestro script "prueba_router.py" permite enviar cada línea de un archivo de texto,
+desde un router determinado hacia otro router. El archivo se llama "texto_de_prueba.txt" y contiene la letra de un cover en español de
+la canción "Kusushiki".
+
+El comando para usarlo (en una terminal aparte) es de la siguiente forma:
+```
+python3 prueba_router.py "IP_final;puerto_final;tiempo_de_vida" IP_envio puerto_envio'
+```
+Por ejemplo, para enviar la canción desde R1 hacia R5, con un TTL de 10, se ejecuta:
+```
+python3 prueba_router.py "127.0.0.1;8885;10" 127.0.0.1 8881
+```
 
 ## Pruebas Mini-Internet sin TTL
 
@@ -107,9 +122,13 @@ Notar que la ruta default acepta todas las IPs (la máscara es 0), y todos los p
 ## Pruebas Mini-Internet con TTL
 
 1) La principal diferencia es que el mensaje deja de estar en un bucle infinito entre R1 y R2. Ahora el mensaje eventualmente llega a R1 con un TTL igual a 0,
-   y es desechado por R1, finalizando su viaje.
+   y es desechado por R1, finalizando su viaje. Esto se puede ver en la siguiente imagen.
 
-2) El orden se pierde completamente. Una buena parte de los mensajes se pierden durante el viaje cuando su TTL llega a 0, y el resto de mensajes que logra llegar    a R5, ingresan en completo desorden.
+   ![Paquete con TTL 0 siendo descartado por R1](Paquete_con_TTL_0.png)
 
-   Esto se puede ver en la siguiente imagen, donde R5 es la terminal de la izquierda que se ubica en el centro de la pantalla. Los números en paréntesis indican
-   el número de línea de cada mensaje dentro del archivo "texto_de_prueba.txt".
+3) El orden se pierde completamente. Una buena parte de los mensajes se pierden durante el viaje cuando su TTL llega a 0, y el resto de mensajes que logra llegar    a R5, ingresan en completo desorden.
+
+   Lo anterior se puede ver en la siguiente imagen, donde R5 es la terminal de la izquierda que se ubica en el centro de la pantalla.
+   Los números en paréntesis indican el número de línea de cada mensaje dentro del archivo "texto_de_prueba.txt".
+
+   ![Paquetes llegando en completo desorden a la terminal de R5](paquetes_en_desorden.png)
