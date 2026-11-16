@@ -19,6 +19,28 @@ Disclaimer Uso de IA: Se utilizó Claude para documentar la mayor parte del arch
 - Para avanzar por la red, la tabla de rutas real devuelve la IP del siguiente router y la interfaz de salida desde donde será enviado el paquete.
   Por el contrario, en nuestra tabla de rutas se devuelve la IP y el puerto del siguiente router (socket UDP).
 
+## La clase IPPacket
+
+Esta estructura contiene la información de un paquete IP ya parseado.
+
+### Atributos de la clase IPPacket
+
+- ip: Un string con la IP del destino final, en formato "a.b.c.d".
+- port: Un entero con el puerto del destino final.
+- ttl: El tiempo de vida (time to live) del paquete.
+- message: Un string con el contenido del paquete, sin headers.
+
+### Métodos de la clase IPPacket
+
+- from_bytes: Recibe una cadena de bytes que representa un paquete IP y lo transforma en una instancia de la clase IPPacket.
+  a) Los primeros 4 bytes de la cadena representan la IP del destino final
+  b) Los siguientes dos bytes representan el puerto del destino final.
+  c) El séptimo byte representa el TTL del paquete.
+  d) El resto de bytes contiene el mensaje del paquete.
+
+- to_bytes: Codifica la información de esta clase en una cadena de bytes que tiene el siguiente orden:
+  "IP (4 bytes) + puerto (2 bytes) + TTL (1 byte) + mensaje". Es la función inversa a "from_bytes".
+
 ## Round Robin y la clase RoutesToArea
 
 Para implementar Round Robin es necesario que el router pueda alternar entre las rutas que se dirigen a una misma área de la red. Eso implica
@@ -69,7 +91,8 @@ y su propia tabla de rutas. Los routers se encargan de enviar y recibir mensajes
 - routes_file_name: Un string con el nombre del archivo con la tabla de rutas.
 - destination_areas: Una lista de instancias RoutesToArea. Esta lista contiene toda la información de la tabla de rutas asociadas a este Router.
   Cuando se crea un router, lo primero que hace es leer la tabla de rutas para llenar esta lista.                
-- socket: Un socket UDP asociado a (ip, puerto).
+- socket: Un socket UDP asociado a (ip, puerto). Por defecto, el socket tiene un buffer de 4096 bytes para no tener que implementar código extra
+  que permita recibir mensajes extremadamente largos.
 
 ### Métodos de la clase Router
 
