@@ -28,7 +28,7 @@ Nosotros creamos la clase RoutesToArea que agrupa todas las rutas posibles, desd
 Esta clase es la que se encarga de alternar entre routers (con Round Robin) y devolver la siguiente ruta a usar.
 También tiene la capacidad de identificar si la dirección final de un paquete pertenece a su red.
 
-### Atríbutos de la clase RoutesToArea:
+### Atributos de la clase RoutesToArea
 
 - ip: Un string con la IP de la red de destino.
 - bits_to_compare: Un entero con el largo del prefijo CIDR (cuántos bits de la IP definen la red).
@@ -37,7 +37,7 @@ También tiene la capacidad de identificar si la dirección final de un paquete 
 - possible_routes: La lista de rutas (IP, puerto) que existen para viajar la red de destino.
 - next_hop_idx: Un entero con el índice de la próxima ruta a usar para viajar a la red (round-robin).
 
-### Métodos de la clase RoutesToArea:
+### Métodos de la clase RoutesToArea
 
 - add_route: Recibe una ruta (IP, puerto) y la añade a la lista de "possible_routes". Se utiliza cuando se instancia esta clase para añadir
   todas las rutas de la tabla de rutas.
@@ -56,6 +56,41 @@ También tiene la capacidad de identificar si la dirección final de un paquete 
   self.next_hop_idx = (self.next_hop_idx + 1) % len(self.possible_routes)
   ```
   Esa línea de código permite implementar Round Robin y alternar entre las distintas rutas.
+
+## La clase Router
+
+Esta clase representa los routers de nuestro mini-internet simulado con sockets UDP. Cada Router tiene una dirección (IP, puerto) específica
+y su propia tabla de rutas. Los routers se encargan de enviar y recibir mensajes que viajan por toda la red hasta llegar a su destino final.
+
+### Atributos de la clase Router
+
+- ip: Un string con la IP en la que escucha el router.
+- port: Un entero con el puerto en el que escucha el router.
+- routes_file_name: Un string con el nombre del archivo con la tabla de rutas.
+- destination_areas: Una lista de instancias RoutesToArea. Esta lista contiene toda la información de la tabla de rutas asociadas a este Router.
+  Cuando se crea un router, lo primero que hace es leer la tabla de rutas para llenar esta lista.                
+- socket: Un socket UDP asociado a (ip, puerto).
+
+### Métodos de la clase Router
+
+- read_routes_file:
+  1) Lee el archivo que tiene la tabla de rutas usando "self.routes_file_name".
+  2) Agrupa cada línea según la siguiente llave: (ip, bits_to_compare, initial_port, last_port). Cada llave representa una área de la red distinta.
+     En el archivo pueden existir muchas rutas para llegar a esa red.
+  3) Para cada agrupación se genera una instancia de RoutesToArea con la información de (ip, bits_to_compare, initial_port, last_port) y se le agregan
+     todos los saltos que permiten viajar a esa red.
+  4) Cada instancia de RoutesToArea es añadida al atributo "self.destination_areas"
+  
+- check_routes: Recibe una dirección (IP, puerto) y revisa si esa dirección pertenece a algunas de las subredes almacenadas en "self.destination_areas".
+  Si encuentra una coincidencia, retorna la dirección del Router al que debe saltar para viajar a esa área de la red. Si no encuentra ninguna,
+  entonces retorna None, sin embargo, esto nunca ocurre, pues en cada tabla de rutas se encuentra el router default.
+
+- run: Recibe paquetes IP en un loop infinito.
+  1) Si el TTL del paquete es igual o menor a 0, entonces desecha el paquete.
+  2) Si el destino final del paquete es la dirección de este router, entonces imprime su mensaje completo.
+  3) Si este router no es su destino final, entonces ejecuta "check_routes" para obtener un salto que lleve el mensaje a su destino final.
+  4) Si encuentra un salto, entonces disminuye el TTL del paquete en 1, y luego envía el paquete a la dirección del salto.
+  5) Si no encuentra ningún salto, entonces descarta el paquete.
 
 ## El router default
 
