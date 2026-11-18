@@ -64,12 +64,11 @@ También tiene la capacidad de identificar si la dirección final de un paquete 
 - add_route: Recibe una ruta (IP, puerto) y la añade a la lista de "possible_routes". Se utiliza cuando se instancia esta clase para añadir
   todas las rutas de la tabla de rutas.
   
-- contains_address: Recibe una dirección final (IP, puerto) y revisa si esa dirección pertenece a la red asociada a esta clase, utilizando:
-  
-  ```
-  ip[:self.bits_to_compare] == self.ip[:self.bits_to_compare] and self.first_port <= port <= self.last_port
-  ```
-  La primera igualdad siempre se cumple pues en esta actividad utilizamos la misma IP para todos los routers.
+- contains_address: Recibe una dirección final (IP, puerto) y revisa si esa dirección pertenece a la red asociada a esta clase:
+  1) Primero se transforman las IPs (strings) en números de 32 bits. Luego, se revisa que los primeros "self.bits_to_compare"
+     bits de ambas IP sean iguales. Esto siempre se cumple, pues en esta actividad utilizamos la misma IP para todos los routers.
+  2) Después, se revisa que el puerto recibido se encuentre en el rango ["self.first_port", "self.last_port"].
+  3) Si todo se cumple, devuelve True. De lo contrario, False.
   
 - get_next_hop: Devuelve la i-ésima ruta almacenada en "possible_routes", donde el valor de i es "next_hop_idx". Luego, actualiza "next_hop_id" para
   que apunte hacia la siguiente ruta de la lista:
