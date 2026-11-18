@@ -129,7 +129,7 @@ R5: Ha recibido el mensaje: abcdefghijabcdefghij... (132 letras, completo)
 ```
 
 - R1 a R2 (MTU 100): 150 > 100, se corta en 2: 82 bytes de mensaje (offset 0, FLAG 1) y 50 bytes (offset 82, FLAG 0).
-- R2 a R3 (MTU 50): el fragmento de 82 se **re-fragmenta** en 3 (32 + 32 + 18).
+- R2 a R3 (MTU 50): el fragmento de 82 se re-fragmenta en 3 (32 + 32 + 18).
 - R2 a R4 (MTU 80): el fragmento de 50 bytes de mensaje (68 en total) cabe y pasa entero.
 - R5 junta los pedazos, que llegan desordenados y por caminos distintos, y imprime el mensaje completo.
 
@@ -147,9 +147,9 @@ Enviamos el paquete 10 veces con TTL 10: R5 re-ensambló 7 y 3 se perdieron porq
 
 Observaciones:
 
-- El round-robin se aplica a cada paquete que pasa por el router, y cada fragmento también es un paquete, así que **fragmentos de un mismo paquete pueden viajar por caminos distintos** y llegan desordenados. Por eso el re-ensamblaje ordena por offset.
-- Los fragmentos **nunca se vuelven a unir en el camino**: aunque después pasen por un enlace más grande (R4 → R5 con MTU 140), siguen chicos. Solo se unen en el destino final (sigue el principio end-to-end).
-- En este ejemplo, R3 y R4 también tienen rutas hacia R5 que vuelven por R2, así que algunos fragmentos dan vueltas y gastan TTL. **Si se pierde un solo fragmento, se pierde el paquete entero**, porque el destino nunca puede completarlo. Mientras más fragmentos, más probable es que alguno se pierda.
+- El round-robin se aplica a cada paquete que pasa por el router, y cada fragmento también es un paquete, así que fragmentos de un mismo paquete pueden viajar por caminos distintos y llegan desordenados. Por eso el re-ensamblaje ordena por offset.
+- Los fragmentos nunca se vuelven a unir en el camino: aunque después pasen por un enlace más grande (R4 → R5 con MTU 140), siguen chicos. Solo se unen en el destino final (sigue el principio end-to-end).
+- En este ejemplo, R3 y R4 también tienen rutas hacia R5 que vuelven por R2, así que algunos fragmentos dan vueltas y gastan TTL. Si se pierde un solo fragmento, se pierde el paquete entero, porque el destino nunca puede completarlo. Mientras más fragmentos, más probable es que alguno se pierda.
 
 ## 5. Limitaciones y conclusión
 
