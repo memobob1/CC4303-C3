@@ -4,6 +4,23 @@ from packet import IPPacket, parse_packet, create_packet
 
 BUFFER_SIZE: int = 4096
 
+def ip_to_int(ip: str) -> int:
+    """
+    Funcion de ayuda que convierte una IP a.b.c.d en un solo número de 32 bits. (Para comparar IPS bit a bit).
+
+    Parámetros:
+        ip (str): IP en formato a.b.c.d.
+
+    Retorna:
+        int: La IP como número, para poder compararla bit a bit.
+    """
+    octets: list[str] = ip.split(".")
+    number: int = 0
+    for octet in octets:
+        # Corremos 8 bits a la izquierda para dejar espacio para el siguiente número
+        number = (number << 8) + int(octet)
+    return number
+
 class RoutesToArea:
     """
     Grupo de rutas de la tabla que llevan a una misma área de destino (red + rango de puertos).
@@ -55,9 +72,14 @@ class RoutesToArea:
         """
         ip: str = address[0]
         port: int = address[1]
-        return (ip[:self.bits_to_compare] == self.ip[:self.bits_to_compare]
-                and port in range(self.first_port, self.last_port + 1))
 
+        # Si hacemos un shift a la derecha se borran los bits de host y quedan solo los de red
+        shift: int = 32 - self.bits_to_compare
+        same_network: bool = (ip_to_int(ip) >> shift) == (ip_to_int(self.ip) >> shift)
+        
+        # retornamos si es la misma red y si el puerto está dentro del rango
+        return same_network and self.first_port <= port <= self.last_port
+    
     def get_next_hop(self) -> tuple[str, int]:
         """
         Entrega la siguiente ruta según round-robin.
@@ -77,6 +99,7 @@ class Router:
         ip (str): IP en la que escucha el router.
         port (int): Puerto en el que escucha el router.
         routes_file_name (str): Nombre del archivo con la tabla de rutas.
+        destination_areas (list[RoutesToArea]): La información de todas las rutas contenidas en la tabla de rutas.
         socket (socket.socket): Socket UDP asociado a (ip, port).
     """
 
