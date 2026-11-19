@@ -6,6 +6,8 @@
 **Auxiliar:** Julián Ferreira
 **Fecha:** 16 de noviembre de 2026
 
+**Enlace de github:** [https://github.com/memobob1/CC4303-C3/tree/main/parte6](https://github.com/memobob1/CC4303-C3/tree/main/parte6)
+
 **Declaración de uso de IA:** Usamos herramientas de IA como apoyo para la documentación del código, la redacción de este informe, la preparación y ejecución de tests para comprobar los resultados, y el debug de errores y problemas.
 
 ---
